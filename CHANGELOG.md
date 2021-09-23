@@ -2,6 +2,156 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.17.2](https://github.com/filebrowser/filebrowser/compare/v2.17.1...v2.17.2) (2021-08-27)
+
+
+### Bug Fixes
+
+* bug with inlineLink not creating url properly ([#1515](https://github.com/filebrowser/filebrowser/issues/1515)) ([43a4609](https://github.com/filebrowser/filebrowser/commit/43a460993c3f0d158b876db4b20caa7963e9f361))
+
+### [2.17.1](https://github.com/filebrowser/filebrowser/compare/v2.17.0...v2.17.1) (2021-08-23)
+
+
+### Bug Fixes
+
+* internal server error if --disable-preview-resize flag is set (closes [#1510](https://github.com/filebrowser/filebrowser/issues/1510)) ([4c3099a](https://github.com/filebrowser/filebrowser/commit/4c3099a086c206dcb3bc70ee8c8da02eee61c30b))
+
+## [2.17.0](https://github.com/filebrowser/filebrowser/compare/v2.16.1...v2.17.0) (2021-08-21)
+
+
+### Features
+
+* open file option on preview ([76add9e](https://github.com/filebrowser/filebrowser/commit/76add9e5274b0373c6b983e3b20e387a14ea6c9e))
+
+
+### Bug Fixes
+
+* 401 error in share view open file button ([#1495](https://github.com/filebrowser/filebrowser/issues/1495)) ([25c8788](https://github.com/filebrowser/filebrowser/commit/25c87883908babde073390a2e2320a8e5880a87c))
+* escape quote on index template ([23d646c](https://github.com/filebrowser/filebrowser/commit/23d646c456876d06cf48e71c1e57b69de99511f0)), closes [#1501](https://github.com/filebrowser/filebrowser/issues/1501)
+* file caching directive ([c63cc5a](https://github.com/filebrowser/filebrowser/commit/c63cc5a2d25909cc4e2f2e7235f276ec66c32bf2))
+
+### [2.16.1](https://github.com/filebrowser/filebrowser/compare/v2.16.0...v2.16.1) (2021-08-04)
+
+
+### Bug Fixes
+
+* check symlink target type (closes [#1488](https://github.com/filebrowser/filebrowser/issues/1488)) ([76b466f](https://github.com/filebrowser/filebrowser/commit/76b466f6492e74cf13e66a33e7e5f597ac92b240))
+
+## [2.16.0](https://github.com/filebrowser/filebrowser/compare/v2.15.0...v2.16.0) (2021-07-26)
+
+
+### Features
+
+* browser cache directives ([190cb99](https://github.com/filebrowser/filebrowser/commit/190cb99a79a0d438eca2da13539f8c6449ad73ac))
+* display error messages on settings ([6032038](https://github.com/filebrowser/filebrowser/commit/603203848a8b2221158088b6d849609db4c0c46c))
+* file name on page title ([16a34de](https://github.com/filebrowser/filebrowser/commit/16a34defc02554a77c6ac47b9e17e69d098a09fe))
+* gzip encoding for static js files ([aa172b8](https://github.com/filebrowser/filebrowser/commit/aa172b8bb5f17d5f5cb9666bfb5ee650d8091fb5))
+* loading spinner on views navigation ([976eb55](https://github.com/filebrowser/filebrowser/commit/976eb5583dae474125fd7ddec5dc19b6c291f98f))
+* message for connection error ([5e6f14b](https://github.com/filebrowser/filebrowser/commit/5e6f14b5dcb9c5efdf526f1346e09c2d0b2f6974))
+* mod time title on file info ([7d1e030](https://github.com/filebrowser/filebrowser/commit/7d1e03075d2c27148f60813defa0f68403d1d3c2))
+* open file option on share ([1c25f6e](https://github.com/filebrowser/filebrowser/commit/1c25f6ee69bd71eed82af7020006d0e27537a967))
+* show more button on share ([ba8c09f](https://github.com/filebrowser/filebrowser/commit/ba8c09f454feeadf4a1e97547a34151a81b389d5))
+* support for IE11 browser ([7ec24d9](https://github.com/filebrowser/filebrowser/commit/7ec24d9d7794fa37825f64ca2d1575f568fb1362))
+
+
+### Bug Fixes
+
+* break resource create/update handlers on error (closes [#1464](https://github.com/filebrowser/filebrowser/issues/1464)) ([5072bbb](https://github.com/filebrowser/filebrowser/commit/5072bbb2cbf5b29d041629faa8367f15e4d145a2))
+* copying files with special characters ([20ebbf6](https://github.com/filebrowser/filebrowser/commit/20ebbf6611b734371426fb1b9cb5e388be90bf7e))
+* delete image cache when moving ([8973c45](https://github.com/filebrowser/filebrowser/commit/8973c4598ff817647f1f1ad6ee36480054cd2776))
+* don't remove files on unsuccessful updates (closes [#1456](https://github.com/filebrowser/filebrowser/issues/1456)) ([6b19ab6](https://github.com/filebrowser/filebrowser/commit/6b19ab6613b12be7f075299cd98f4b41d43827c7))
+* failure on broken symlink deletion ([8650d2f](https://github.com/filebrowser/filebrowser/commit/8650d2ffe7a29cbafa800efcecbf6a61598a9f0c))
+* inconsistent double click on listing item ([ba7e71a](https://github.com/filebrowser/filebrowser/commit/ba7e71a7c3b0cc71012e5adf94b1c642e554972e))
+* no items displayed on file listing ([18889ad](https://github.com/filebrowser/filebrowser/commit/18889ad725f7f7e5a7e3f7abcf156487556dbeaf))
+* omit file content ([209f9fa](https://github.com/filebrowser/filebrowser/commit/209f9fa77f751054512355f2b74b9b7258465d0b))
+* short commit sha and typo fix in Makefile ([#1411](https://github.com/filebrowser/filebrowser/issues/1411)) ([46ee595](https://github.com/filebrowser/filebrowser/commit/46ee59538914dc2859f0da6b32e2d062d0a01b10))
+
+## [2.15.0](https://github.com/filebrowser/filebrowser/compare/v2.14.1...v2.15.0) (2021-04-06)
+
+
+### Features
+
+* add EXIF thumbnail support for JPEG files ([#1234](https://github.com/filebrowser/filebrowser/issues/1234)) ([7dd5b34](https://github.com/filebrowser/filebrowser/commit/7dd5b34d425dfbc2782152310483cbecf85c800a))
+* dynamic autoplay on previewer ([a76e01d](https://github.com/filebrowser/filebrowser/commit/a76e01d2b78a785f3665a8b3532c7cc566bfabce))
+* dynamic item count on file listing ([6c8ee96](https://github.com/filebrowser/filebrowser/commit/6c8ee96e6a21fae5d4608bdc7a5c5a161d7dafd3))
+* dynamic zoom limit on previewer ([e410272](https://github.com/filebrowser/filebrowser/commit/e410272e6be6a0b660efe8d4eee6c6e9dd834cc5))
+
+
+### Bug Fixes
+
+* buttons without permission on header ([1516d99](https://github.com/filebrowser/filebrowser/commit/1516d9932bf9926ac8b4cb3e738a5f51e80d5b1d))
+* check modify permission on file overwrite ([59f9964](https://github.com/filebrowser/filebrowser/commit/59f9964e80c8233775f27be33a4c16a31bfe848a))
+* empty archive name on directory download ([2697093](https://github.com/filebrowser/filebrowser/commit/2697093ac151f74eea3022951d128acfe04d1dcf))
+* empty text file on editor ([e9baf0c](https://github.com/filebrowser/filebrowser/commit/e9baf0c4b688fab291cdc842ec464c7a7a816499))
+* error causes panic on upload ([e1a6f59](https://github.com/filebrowser/filebrowser/commit/e1a6f593e1824e7fa4345a61dff5b1bb8cd22d05))
+* hidden editor header on Safari ([b521dec](https://github.com/filebrowser/filebrowser/commit/b521dec8f9b14dd92248c429e902ebc639046389))
+* image quality switch on previewer ([c0d85f3](https://github.com/filebrowser/filebrowser/commit/c0d85f3d85926c8790757bf142140d19455ae8ca))
+* list item interactions on share ([87f1881](https://github.com/filebrowser/filebrowser/commit/87f1881b429877a740ea84a8e783ad4103248289))
+* missing bold variation for Roboto font ([98d79b8](https://github.com/filebrowser/filebrowser/commit/98d79b8ed955df5691a306d709b4ab60d91da408))
+* mouse wheel zoom on previewer ([fcb115f](https://github.com/filebrowser/filebrowser/commit/fcb115f42d33db2be7a4d428ec53d65d6050320b))
+* no header button animations on file listing ([fe80730](https://github.com/filebrowser/filebrowser/commit/fe80730bb135b38e4d9de470c75cbe10b1aec201))
+
+### [2.14.1](https://github.com/filebrowser/filebrowser/compare/v2.14.0...v2.14.1) (2021-03-21)
+
+
+### Bug Fixes
+
+* display public routes with header proxy auth ([da54bd6](https://github.com/filebrowser/filebrowser/commit/da54bd6c214d7ee39b71d710ddfe6dd25fc4e5d6))
+
+## [2.14.0](https://github.com/filebrowser/filebrowser/compare/v2.13.0...v2.14.0) (2021-03-21)
+
+
+### Features
+
+* add health check handler ([a721dc1](https://github.com/filebrowser/filebrowser/commit/a721dc1f314732e60d331a1a7da97d06e0e8b613))
+
+
+### Bug Fixes
+
+* hide dotfile error on share ([5f4a031](https://github.com/filebrowser/filebrowser/commit/5f4a0317ab5685fe4a558df74e604c12e04a1c10))
+* prefix handling on http router ([93a35ad](https://github.com/filebrowser/filebrowser/commit/93a35ad2516accdcb9735db509550979d01de2c3))
+* qr code url on share ([22f4be8](https://github.com/filebrowser/filebrowser/commit/22f4be8f54162b7cf494177705ffb8b09117bd01))
+* text file detection on editor ([eeadc53](https://github.com/filebrowser/filebrowser/commit/eeadc532fe6057969b3c1a4726f236851b154cfa))
+
+## [2.13.0](https://github.com/filebrowser/filebrowser/compare/v2.12.1...v2.13.0) (2021-03-14)
+
+
+### Features
+
+* dual pane settings view ([db5aad8](https://github.com/filebrowser/filebrowser/commit/db5aad8eb679cfe1b1ace5142cf342951217f0f7))
+* improved settings navbar ([5b28aa0](https://github.com/filebrowser/filebrowser/commit/5b28aa0848710b9d3ee02a2aa912856395f48bd2))
+* improved sharing prompt ([1819377](https://github.com/filebrowser/filebrowser/commit/18193778971e27d18b5a35df8c2d0e2953b48111))
+* increased header button counter size ([4fb832c](https://github.com/filebrowser/filebrowser/commit/4fb832c0422107e16f22b7aa928224f36de4978f))
+* larger previewer content ([62fff5c](https://github.com/filebrowser/filebrowser/commit/62fff5ca60da1f887c1f95fa4808d3753596dab2))
+
+
+### Bug Fixes
+
+* archive contains parent path on Windows ([54f3570](https://github.com/filebrowser/filebrowser/commit/54f35701a2bd5cb7ec0628ca9789047072c073db))
+* check rules on http resource handlers ([5bf1554](https://github.com/filebrowser/filebrowser/commit/5bf15548d0ad147acfad5000277531be2671f7ce))
+* download current dir on file listing ([488d980](https://github.com/filebrowser/filebrowser/commit/488d98045e7476ed11e53c13d9498a9db3165bbc))
+* encoded file path on share ([7955e07](https://github.com/filebrowser/filebrowser/commit/7955e0720baef3710106c7e69bbbf078d5489220))
+* full file path on share ([e017a19](https://github.com/filebrowser/filebrowser/commit/e017a199850e19dd51b960ba59402c215fd8f1af))
+* header dropdown icon color on previewer ([f8df76f](https://github.com/filebrowser/filebrowser/commit/f8df76f52684f10722ce123fec2c90e321ddf103))
+* item dragging on file listing ([326b35a](https://github.com/filebrowser/filebrowser/commit/326b35a7ac7871afcdf892ca150349665b7f6379))
+* modified time on info prompt ([11ebaec](https://github.com/filebrowser/filebrowser/commit/11ebaec5f0671ec02ebe55d4a73a514bce3a6713))
+* root path name on archive ([426b38b](https://github.com/filebrowser/filebrowser/commit/426b38bb3362d2d477d0d8aa27d880664d537431))
+* stuck icon on header button ([6a734c0](https://github.com/filebrowser/filebrowser/commit/6a734c01391b437c2842f5d97fb63f29a0017510))
+* update image cache when replacing ([81b6f4d](https://github.com/filebrowser/filebrowser/commit/81b6f4d6f6a01886583016f61f4f1951a59f244d))
+* wait for async command exit ([#1326](https://github.com/filebrowser/filebrowser/issues/1326)) ([6d5ceae](https://github.com/filebrowser/filebrowser/commit/6d5ceae8b454edd749b3b65c88aacc0a31ce9215))
+
+
+### Refactorings
+
+* migrate from rice to embed.FS ([fc55061](https://github.com/filebrowser/filebrowser/commit/fc5506179a64e9e2f57f7b6d6cce4b95f5ebc235))
+
+### [2.12.1](https://github.com/filebrowser/filebrowser/compare/v2.12.0...v2.12.1) (2021-03-07)
+
+
+### Bug Fixes
+
+* add missing default config into the docker image ([7358b3f](https://github.com/filebrowser/filebrowser/commit/7358b3fe3178c20007b4b5ef5c03705badd538c4))
+
 ## [2.12.0](https://github.com/filebrowser/filebrowser/compare/v2.11.0...v2.12.0) (2021-03-04)
 
 
