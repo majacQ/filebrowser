@@ -1,47 +1,46 @@
 <template>
   <div class="card floating">
     <div class="card-content">
-      <p>{{ $t('prompts.deleteMessageShare', {path: hash.path}) }}</p>
+      <p>{{ $t("prompts.deleteMessageShare", { path: "" }) }}</p>
     </div>
     <div class="card-action">
-      <button @click="$store.commit('closeHovers')"
+      <button
+        @click="closeHovers"
         class="button button--flat button--grey"
         :aria-label="$t('buttons.cancel')"
-        :title="$t('buttons.cancel')">{{ $t('buttons.cancel') }}</button>
-      <button @click="submit"
+        :title="$t('buttons.cancel')"
+        tabindex="2"
+      >
+        {{ $t("buttons.cancel") }}
+      </button>
+      <button
+        id="focus-prompt"
+        @click="submit"
         class="button button--flat button--red"
         :aria-label="$t('buttons.delete')"
-        :title="$t('buttons.delete')">{{ $t('buttons.delete') }}</button>
+        :title="$t('buttons.delete')"
+        tabindex="1"
+      >
+        {{ $t("buttons.delete") }}
+      </button>
     </div>
   </div>
 </template>
 
 <script>
-import {mapMutations, mapState} from 'vuex'
-import { share as api } from '@/api'
-import buttons from '@/utils/buttons'
+import { mapActions, mapState } from "pinia";
+import { useLayoutStore } from "@/stores/layout";
 
 export default {
-  name: 'share-delete',
+  name: "share-delete",
   computed: {
-    ...mapState(['hash'])
+    ...mapState(useLayoutStore, ["currentPrompt"]),
   },
   methods: {
-    ...mapMutations(['closeHovers']),
-    submit: async function () {
-      buttons.loading('delete')
-
-      try {
-        await api.remove(this.hash.hash)
-        buttons.success('delete')
-
-        this.$root.$emit('share-deleted', this.hash.hash)
-        this.closeHovers()
-      } catch (e) {
-        buttons.done('delete')
-        this.$showError(e)
-      }
-    }
-  }
-}
+    ...mapActions(useLayoutStore, ["closeHovers"]),
+    submit: function () {
+      this.currentPrompt?.confirm();
+    },
+  },
+};
 </script>

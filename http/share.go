@@ -4,9 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,7 +14,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/filebrowser/filebrowser/v2/errors"
+	fbErrors "github.com/filebrowser/filebrowser/v2/errors"
 	"github.com/filebrowser/filebrowser/v2/share"
 )
 
@@ -38,7 +38,7 @@ var shareListHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 	} else {
 		s, err = d.store.Share.FindByUserID(d.user.ID)
 	}
-	if err == errors.ErrNotExist {
+	if errors.Is(err, fbErrors.ErrNotExist) {
 		return renderJSON(w, r, []*share.Link{})
 	}
 
@@ -58,7 +58,7 @@ var shareListHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 
 var shareGetsHandler = withPermShare(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	s, err := d.store.Share.Gets(r.URL.Path, d.user.ID)
-	if err == errors.ErrNotExist {
+	if errors.Is(err, fbErrors.ErrNotExist) {
 		return renderJSON(w, r, []*share.Link{})
 	}
 
@@ -69,7 +69,7 @@ var shareGetsHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 	return renderJSON(w, r, s)
 })
 
-var shareDeleteHandler = withPermShare(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var shareDeleteHandler = withPermShare(func(_ http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	hash := strings.TrimSuffix(r.URL.Path, "/")
 	hash = strings.TrimPrefix(hash, "/")
 
@@ -91,18 +91,7 @@ var sharePostHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 		defer r.Body.Close()
 	}
 
-	if body.Expires == "" {
-		var err error
-		s, err = d.store.Share.GetPermanent(r.URL.Path, d.user.ID)
-		if err == nil {
-			if _, err := w.Write([]byte(path.Join(d.server.BaseURL, "/share/", s.Hash))); err != nil {
-				return http.StatusInternalServerError, err
-			}
-			return 0, nil
-		}
-	}
-
-	bytes := make([]byte, 6)
+	bytes := make([]byte, 6) //nolint:gomnd
 	_, err := rand.Read(bytes)
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -141,7 +130,7 @@ var sharePostHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 
 	var token string
 	if len(hash) > 0 {
-		tokenBuffer := make([]byte, 96)
+		tokenBuffer := make([]byte, 96) //nolint:gomnd
 		if _, err := rand.Read(tokenBuffer); err != nil {
 			return http.StatusInternalServerError, err
 		}

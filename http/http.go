@@ -1,6 +1,7 @@
 package http
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -14,11 +15,23 @@ type modifyRequest struct {
 	Which []string `json:"which"` // Answer to: which fields?
 }
 
-func NewHandler(imgSvc ImgService, fileCache FileCache, store *storage.Storage, server *settings.Server) (http.Handler, error) {
+func NewHandler(
+	imgSvc ImgService,
+	fileCache FileCache,
+	store *storage.Storage,
+	server *settings.Server,
+	assetsFs fs.FS,
+) (http.Handler, error) {
 	server.Clean()
 
 	r := mux.NewRouter()
-	index, static := getStaticHandlers(store, server)
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Security-Policy", `default-src 'self'; style-src 'unsafe-inline';`)
+			next.ServeHTTP(w, r)
+		})
+	})
+	index, static := getStaticHandlers(store, server, assetsFs)
 
 	// NOTE: This fixes the issue where it would redirect if people did not put a
 	// trailing slash in the end. I hate this decision since this allows some awful
@@ -29,14 +42,16 @@ func NewHandler(imgSvc ImgService, fileCache FileCache, store *storage.Storage, 
 		return handle(fn, prefix, store, server)
 	}
 
+	r.HandleFunc("/health", healthHandler)
 	r.PathPrefix("/static").Handler(static)
 	r.NotFoundHandler = index
 
 	api := r.PathPrefix("/api").Subrouter()
 
-	api.Handle("/login", monkey(loginHandler, ""))
+	tokenExpirationTime := server.GetTokenExpirationTime(DefaultTokenExpirationTime)
+	api.Handle("/login", monkey(loginHandler(tokenExpirationTime), ""))
 	api.Handle("/signup", monkey(signupHandler, ""))
-	api.Handle("/renew", monkey(renewHandler, ""))
+	api.Handle("/renew", monkey(renewHandler(tokenExpirationTime), ""))
 
 	users := api.PathPrefix("/users").Subrouter()
 	users.Handle("", monkey(usersGetHandler, "")).Methods("GET")
@@ -47,9 +62,16 @@ func NewHandler(imgSvc ImgService, fileCache FileCache, store *storage.Storage, 
 
 	api.PathPrefix("/resources").Handler(monkey(resourceGetHandler, "/api/resources")).Methods("GET")
 	api.PathPrefix("/resources").Handler(monkey(resourceDeleteHandler(fileCache), "/api/resources")).Methods("DELETE")
-	api.PathPrefix("/resources").Handler(monkey(resourcePostPutHandler, "/api/resources")).Methods("POST")
-	api.PathPrefix("/resources").Handler(monkey(resourcePostPutHandler, "/api/resources")).Methods("PUT")
-	api.PathPrefix("/resources").Handler(monkey(resourcePatchHandler, "/api/resources")).Methods("PATCH")
+	api.PathPrefix("/resources").Handler(monkey(resourcePostHandler(fileCache), "/api/resources")).Methods("POST")
+	api.PathPrefix("/resources").Handler(monkey(resourcePutHandler, "/api/resources")).Methods("PUT")
+	api.PathPrefix("/resources").Handler(monkey(resourcePatchHandler(fileCache), "/api/resources")).Methods("PATCH")
+
+	api.PathPrefix("/tus").Handler(monkey(tusPostHandler(), "/api/tus")).Methods("POST")
+	api.PathPrefix("/tus").Handler(monkey(tusHeadHandler(), "/api/tus")).Methods("HEAD", "GET")
+	api.PathPrefix("/tus").Handler(monkey(tusPatchHandler(), "/api/tus")).Methods("PATCH")
+	api.PathPrefix("/tus").Handler(monkey(resourceDeleteHandler(fileCache), "/api/tus")).Methods("DELETE")
+
+	api.PathPrefix("/usage").Handler(monkey(diskUsage, "/api/usage")).Methods("GET")
 
 	api.Path("/shares").Handler(monkey(shareListHandler, "/api/shares")).Methods("GET")
 	api.PathPrefix("/share").Handler(monkey(shareGetsHandler, "/api/share")).Methods("GET")
@@ -64,6 +86,7 @@ func NewHandler(imgSvc ImgService, fileCache FileCache, store *storage.Storage, 
 		Handler(monkey(previewHandler(imgSvc, fileCache, server.EnableThumbnails, server.ResizePreview), "/api/preview")).Methods("GET")
 	api.PathPrefix("/command").Handler(monkey(commandsHandler, "/api/command")).Methods("GET")
 	api.PathPrefix("/search").Handler(monkey(searchHandler, "/api/search")).Methods("GET")
+	api.PathPrefix("/subtitle").Handler(monkey(subtitleHandler, "/api/subtitle")).Methods("GET")
 
 	public := api.PathPrefix("/public").Subrouter()
 	public.PathPrefix("/dl").Handler(monkey(publicDlHandler, "/api/public/dl/")).Methods("GET")

@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"path"
 	"path/filepath"
 	"strings"
@@ -16,7 +17,7 @@ import (
 
 var withHashFile = func(fn handleFunc) handleFunc {
 	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		id, path := ifPathWithName(r)
+		id, ifPath := ifPathWithName(r)
 		link, err := d.store.Share.GetByHash(id)
 		if err != nil {
 			return errToStatus(err), err
@@ -34,11 +35,11 @@ var withHashFile = func(fn handleFunc) handleFunc {
 
 		d.user = user
 
-		file, err := files.NewFileInfo(files.FileOptions{
+		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.user.Fs,
 			Path:       link.Path,
 			Modify:     d.user.Perm.Modify,
-			Expand:     true,
+			Expand:     false,
 			ReadHeader: d.server.TypeDetectionByHeader,
 			Checker:    d,
 			Token:      link.Token,
@@ -47,21 +48,30 @@ var withHashFile = func(fn handleFunc) handleFunc {
 			return errToStatus(err), err
 		}
 
-		if file.IsDir {
-			// set fs root to the shared folder
-			d.user.Fs = afero.NewBasePathFs(d.user.Fs, filepath.Dir(link.Path))
+		// share base path
+		basePath := link.Path
 
-			file, err = files.NewFileInfo(files.FileOptions{
-				Fs:      d.user.Fs,
-				Path:    path,
-				Modify:  d.user.Perm.Modify,
-				Expand:  true,
-				Checker: d,
-				Token:   link.Token,
-			})
-			if err != nil {
-				return errToStatus(err), err
-			}
+		// file relative path
+		filePath := ""
+
+		if file.IsDir {
+			basePath = filepath.Dir(basePath)
+			filePath = ifPath
+		}
+
+		// set fs root to the shared file/folder
+		d.user.Fs = afero.NewBasePathFs(d.user.Fs, basePath)
+
+		file, err = files.NewFileInfo(&files.FileOptions{
+			Fs:      d.user.Fs,
+			Path:    filePath,
+			Modify:  d.user.Perm.Modify,
+			Expand:  true,
+			Checker: d,
+			Token:   link.Token,
+		})
+		if err != nil {
+			return errToStatus(err), err
 		}
 
 		d.raw = file
@@ -115,6 +125,10 @@ func authenticateShareRequest(r *http.Request, l *share.Link) (int, error) {
 	}
 
 	password := r.Header.Get("X-SHARE-PASSWORD")
+	password, err := url.QueryUnescape(password)
+	if err != nil {
+		return 0, err
+	}
 	if password == "" {
 		return http.StatusUnauthorized, nil
 	}
@@ -126,4 +140,9 @@ func authenticateShareRequest(r *http.Request, l *share.Link) (int, error) {
 	}
 
 	return 0, nil
+}
+
+func healthHandler(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"OK"}`))
 }

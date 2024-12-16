@@ -1,109 +1,182 @@
 <template>
-  <div class="dashboard">
-     <form class="card" @submit="updateSettings">
-      <div class="card-title">
-        <h2>{{ $t('settings.profileSettings') }}</h2>
-      </div>
+  <div class="row">
+    <div class="column">
+      <form class="card" @submit="updateSettings">
+        <div class="card-title">
+          <h2>{{ t("settings.profileSettings") }}</h2>
+        </div>
 
-      <div class="card-content">
-        <p><input type="checkbox" v-model="hideDotfiles"> {{ $t('settings.hideDotfiles') }}</p>
-        <p><input type="checkbox" v-model="singleClick"> {{ $t('settings.singleClick') }}</p>
-        <h3>{{ $t('settings.language') }}</h3>
-        <languages class="input input--block" :locale.sync="locale"></languages>
-      </div>
+        <div class="card-content">
+          <p>
+            <input type="checkbox" name="hideDotfiles" v-model="hideDotfiles" />
+            {{ t("settings.hideDotfiles") }}
+          </p>
+          <p>
+            <input type="checkbox" name="singleClick" v-model="singleClick" />
+            {{ t("settings.singleClick") }}
+          </p>
+          <p>
+            <input type="checkbox" name="dateFormat" v-model="dateFormat" />
+            {{ t("settings.setDateFormat") }}
+          </p>
+          <h3>{{ t("settings.language") }}</h3>
+          <languages
+            class="input input--block"
+            v-model:locale="locale"
+          ></languages>
+        </div>
 
-      <div class="card-action">
-        <input class="button button--flat" type="submit" :value="$t('buttons.update')">
-      </div>
-    </form>
+        <div class="card-action">
+          <input
+            class="button button--flat"
+            type="submit"
+            name="submitProfile"
+            :value="t('buttons.update')"
+          />
+        </div>
+      </form>
+    </div>
 
-    <form class="card" v-if="!user.lockPassword" @submit="updatePassword">
-      <div class="card-title">
-        <h2>{{ $t('settings.changePassword') }}</h2>
-      </div>
+    <div class="column">
+      <form
+        class="card"
+        v-if="!authStore.user?.lockPassword"
+        @submit="updatePassword"
+      >
+        <div class="card-title">
+          <h2>{{ t("settings.changePassword") }}</h2>
+        </div>
 
-      <div class="card-content">
-        <input :class="passwordClass" type="password" :placeholder="$t('settings.newPassword')" v-model="password" name="password">
-        <input :class="passwordClass" type="password" :placeholder="$t('settings.newPasswordConfirm')" v-model="passwordConf" name="password">
-      </div>
+        <div class="card-content">
+          <input
+            :class="passwordClass"
+            type="password"
+            :placeholder="t('settings.newPassword')"
+            v-model="password"
+            name="password"
+          />
+          <input
+            :class="passwordClass"
+            type="password"
+            :placeholder="t('settings.newPasswordConfirm')"
+            v-model="passwordConf"
+            name="passwordConf"
+          />
+        </div>
 
-      <div class="card-action">
-        <input class="button button--flat" type="submit" :value="$t('buttons.update')">
-      </div>
-    </form>
+        <div class="card-action">
+          <input
+            class="button button--flat"
+            type="submit"
+            name="submitPassword"
+            :value="t('buttons.update')"
+          />
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
-<script>
-import { mapState, mapMutations } from 'vuex'
-import { users as api } from '@/api'
-import Languages from '@/components/settings/Languages'
+<script setup lang="ts">
+import { useAuthStore } from "@/stores/auth";
+import { useLayoutStore } from "@/stores/layout";
+import { users as api } from "@/api";
+import Languages from "@/components/settings/Languages.vue";
+import { computed, inject, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-export default {
-  name: 'settings',
-  components: {
-    Languages
-  },
-  data: function () {
-    return {
-      password: '',
-      passwordConf: '',
-      hideDotfiles: false,
-      singleClick: false,
-      locale: ''
-    }
-  },
-  computed: {
-    ...mapState([ 'user' ]),
-    passwordClass () {
-      const baseClass = 'input input--block'
+const layoutStore = useLayoutStore();
+const authStore = useAuthStore();
+const { t } = useI18n();
 
-      if (this.password === '' && this.passwordConf === '') {
-        return baseClass
-      }
+const $showSuccess = inject<IToastSuccess>("$showSuccess")!;
+const $showError = inject<IToastError>("$showError")!;
 
-      if (this.password === this.passwordConf) {
-        return `${baseClass} input--green`
-      }
+const password = ref<string>("");
+const passwordConf = ref<string>("");
+const hideDotfiles = ref<boolean>(false);
+const singleClick = ref<boolean>(false);
+const dateFormat = ref<boolean>(false);
+const locale = ref<string>("");
 
-      return `${baseClass} input--red`
-    }
-  },
-  created () {
-    this.locale = this.user.locale
-    this.hideDotfiles = this.user.hideDotfiles
-    this.singleClick = this.user.singleClick
-  },
-  methods: {
-    ...mapMutations([ 'updateUser' ]),
-    async updatePassword (event) {
-      event.preventDefault()
+const passwordClass = computed(() => {
+  const baseClass = "input input--block";
 
-      if (this.password !== this.passwordConf || this.password === '') {
-        return
-      }
+  if (password.value === "" && passwordConf.value === "") {
+    return baseClass;
+  }
 
-      try {
-        const data = { id: this.user.id, password: this.password }
-        await api.update(data, ['password'])
-        this.updateUser(data)
-        this.$showSuccess(this.$t('settings.passwordUpdated'))
-      } catch (e) {
-        this.$showError(e)
-      }
-    },
-    async updateSettings (event) {
-      event.preventDefault()
+  if (password.value === passwordConf.value) {
+    return `${baseClass} input--green`;
+  }
 
-      try {
-        const data = { id: this.user.id, locale: this.locale, hideDotfiles: this.hideDotfiles, singleClick: this.singleClick }
-        await api.update(data, ['locale', 'hideDotfiles', 'singleClick'])
-        this.updateUser(data)
-        this.$showSuccess(this.$t('settings.settingsUpdated'))
-      } catch (e) {
-        this.$showError(e)
-      }
+  return `${baseClass} input--red`;
+});
+
+onMounted(() => {
+  layoutStore.loading = true;
+  if (authStore.user === null) return false;
+  locale.value = authStore.user.locale;
+  hideDotfiles.value = authStore.user.hideDotfiles;
+  singleClick.value = authStore.user.singleClick;
+  dateFormat.value = authStore.user.dateFormat;
+  layoutStore.loading = false;
+  return true;
+});
+
+const updatePassword = async (event: Event) => {
+  event.preventDefault();
+
+  if (
+    password.value !== passwordConf.value ||
+    password.value === "" ||
+    authStore.user === null
+  ) {
+    return;
+  }
+
+  try {
+    const data = {
+      ...authStore.user,
+      id: authStore.user.id,
+      password: password.value,
+    };
+    await api.update(data, ["password"]);
+    authStore.updateUser(data);
+    $showSuccess(t("settings.passwordUpdated"));
+  } catch (e: any) {
+    $showError(e);
+  } finally {
+    password.value = passwordConf.value = "";
+  }
+};
+const updateSettings = async (event: Event) => {
+  event.preventDefault();
+
+  try {
+    if (authStore.user === null) throw new Error("User is not set!");
+
+    const data = {
+      ...authStore.user,
+      id: authStore.user.id,
+      locale: locale.value,
+      hideDotfiles: hideDotfiles.value,
+      singleClick: singleClick.value,
+      dateFormat: dateFormat.value,
+    };
+
+    await api.update(data, [
+      "locale",
+      "hideDotfiles",
+      "singleClick",
+      "dateFormat",
+    ]);
+    authStore.updateUser(data);
+    $showSuccess(t("settings.settingsUpdated"));
+  } catch (err) {
+    if (err instanceof Error) {
+      $showError(err);
     }
   }
-}
+};
 </script>

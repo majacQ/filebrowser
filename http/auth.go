@@ -2,21 +2,22 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/request"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v4/request"
 
-	"github.com/filebrowser/filebrowser/v2/errors"
+	fbErrors "github.com/filebrowser/filebrowser/v2/errors"
 	"github.com/filebrowser/filebrowser/v2/users"
 )
 
 const (
-	TokenExpirationTime = time.Hour * 2
+	DefaultTokenExpirationTime = time.Hour * 2
 )
 
 type userInfo struct {
@@ -28,11 +29,12 @@ type userInfo struct {
 	Commands     []string          `json:"commands"`
 	LockPassword bool              `json:"lockPassword"`
 	HideDotfiles bool              `json:"hideDotfiles"`
+	DateFormat   bool              `json:"dateFormat"`
 }
 
 type authToken struct {
 	User userInfo `json:"user"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 type extractor []string
@@ -48,16 +50,23 @@ func (e extractor) ExtractToken(r *http.Request) (string, error) {
 	}
 
 	auth := r.URL.Query().Get("auth")
-	if auth == "" {
-		return "", request.ErrNoTokenInRequest
+	if auth != "" && strings.Count(auth, ".") == 2 {
+		return auth, nil
 	}
 
-	return auth, nil
+	if r.Method == http.MethodGet {
+		cookie, _ := r.Cookie("auth")
+		if cookie != nil && strings.Count(cookie.Value, ".") == 2 {
+			return cookie.Value, nil
+		}
+	}
+
+	return "", request.ErrNoTokenInRequest
 }
 
 func withUser(fn handleFunc) handleFunc {
 	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		keyFunc := func(token *jwt.Token) (interface{}, error) {
+		keyFunc := func(_ *jwt.Token) (interface{}, error) {
 			return d.settings.Key, nil
 		}
 
@@ -65,11 +74,11 @@ func withUser(fn handleFunc) handleFunc {
 		token, err := request.ParseFromRequest(r, &extractor{}, keyFunc, request.WithClaims(&tk))
 
 		if err != nil || !token.Valid {
-			return http.StatusForbidden, nil
+			return http.StatusUnauthorized, nil
 		}
 
-		expired := !tk.VerifyExpiresAt(time.Now().Add(time.Hour).Unix(), true)
-		updated := d.store.Users.LastUpdate(tk.User.ID) > tk.IssuedAt
+		expired := !tk.VerifyExpiresAt(time.Now().Add(time.Hour), true)
+		updated := tk.IssuedAt != nil && tk.IssuedAt.Unix() < d.store.Users.LastUpdate(tk.User.ID)
 
 		if expired || updated {
 			w.Header().Add("X-Renew-Token", "true")
@@ -93,19 +102,22 @@ func withAdmin(fn handleFunc) handleFunc {
 	})
 }
 
-var loginHandler = func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-	auther, err := d.store.Auth.Get(d.settings.AuthMethod)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
+func loginHandler(tokenExpireTime time.Duration) handleFunc {
+	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+		auther, err := d.store.Auth.Get(d.settings.AuthMethod)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
 
-	user, err := auther.Auth(r, d.store.Users, d.server.Root)
-	if err == os.ErrPermission {
-		return http.StatusForbidden, nil
-	} else if err != nil {
-		return http.StatusInternalServerError, err
-	} else {
-		return printToken(w, r, d, user)
+		user, err := auther.Auth(r, d.store.Users, d.settings, d.server)
+		switch {
+		case errors.Is(err, os.ErrPermission):
+			return http.StatusForbidden, nil
+		case err != nil:
+			return http.StatusInternalServerError, err
+		}
+
+		return printToken(w, r, d, user, tokenExpireTime)
 	}
 }
 
@@ -114,7 +126,7 @@ type signupBody struct {
 	Password string `json:"password"`
 }
 
-var signupHandler = func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var signupHandler = func(_ http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	if !d.settings.Signup {
 		return http.StatusMethodNotAllowed, nil
 	}
@@ -155,7 +167,7 @@ var signupHandler = func(w http.ResponseWriter, r *http.Request, d *data) (int, 
 	log.Printf("new user: %s, home dir: [%s].", user.Username, userHome)
 
 	err = d.store.Users.Save(user)
-	if err == errors.ErrExist {
+	if errors.Is(err, fbErrors.ErrExist) {
 		return http.StatusConflict, err
 	} else if err != nil {
 		return http.StatusInternalServerError, err
@@ -164,11 +176,14 @@ var signupHandler = func(w http.ResponseWriter, r *http.Request, d *data) (int, 
 	return http.StatusOK, nil
 }
 
-var renewHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-	return printToken(w, r, d, d.user)
-})
+func renewHandler(tokenExpireTime time.Duration) handleFunc {
+	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+		w.Header().Set("X-Renew-Token", "false")
+		return printToken(w, r, d, d.user, tokenExpireTime)
+	})
+}
 
-func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.User) (int, error) {
+func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.User, tokenExpirationTime time.Duration) (int, error) {
 	claims := &authToken{
 		User: userInfo{
 			ID:           user.ID,
@@ -179,10 +194,11 @@ func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.Use
 			LockPassword: user.LockPassword,
 			Commands:     user.Commands,
 			HideDotfiles: user.HideDotfiles,
+			DateFormat:   user.DateFormat,
 		},
-		StandardClaims: jwt.StandardClaims{
-			IssuedAt:  time.Now().Unix(),
-			ExpiresAt: time.Now().Add(TokenExpirationTime).Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenExpirationTime)),
 			Issuer:    "File Browser",
 		},
 	}

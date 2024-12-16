@@ -1,15 +1,14 @@
 *.db
-*.lock
 *.bak
 _old
 rice-box.go
 .idea/
-filebrowser
-dist/
+/filebrowser
+/filebrowser.exe
+/dist
 
 .DS_Store
 node_modules
-/frontend/dist
 
 # local env files
 .env.local
@@ -30,3 +29,15 @@ yarn-error.log*
 *.sw*
 bin/
 build/
+
+# Vue distributable files
+/frontend/dist/*
+!/frontend/dist/.gitkeep
+
+# Playwright files
+/frontend/test-results/
+/frontend/playwright-report/
+/frontend/playwright/.cache/
+
+default.nix
+Dockerfile.dev

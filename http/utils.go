@@ -32,9 +32,9 @@ func errToStatus(err error) int {
 		return http.StatusOK
 	case os.IsPermission(err):
 		return http.StatusForbidden
-	case os.IsNotExist(err), err == libErrors.ErrNotExist:
+	case os.IsNotExist(err), errors.Is(err, libErrors.ErrNotExist):
 		return http.StatusNotFound
-	case os.IsExist(err), err == libErrors.ErrExist:
+	case os.IsExist(err), errors.Is(err, libErrors.ErrExist):
 		return http.StatusConflict
 	case errors.Is(err, libErrors.ErrPermissionDenied):
 		return http.StatusForbidden
@@ -47,7 +47,7 @@ func errToStatus(err error) int {
 	}
 }
 
-// This is an addaptation if http.StripPrefix in which we don't
+// This is an adaptation if http.StripPrefix in which we don't
 // return 404 if the page doesn't have the needed prefix.
 func stripPrefix(prefix string, h http.Handler) http.Handler {
 	if prefix == "" || prefix == "/" {
@@ -56,11 +56,13 @@ func stripPrefix(prefix string, h http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := strings.TrimPrefix(r.URL.Path, prefix)
+		rp := strings.TrimPrefix(r.URL.RawPath, prefix)
 		r2 := new(http.Request)
 		*r2 = *r
 		r2.URL = new(url.URL)
 		*r2.URL = *r.URL
 		r2.URL.Path = p
+		r2.URL.RawPath = rp
 		h.ServeHTTP(w, r2)
 	})
 }
